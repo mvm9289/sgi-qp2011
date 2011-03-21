@@ -1,10 +1,12 @@
 #!BPY 
-""" 
-Name: 'Informacio malla' 
-Blender: 249
-Group: 'Mesh' 
-Tooltip: 'Put some useful info here' 
-""" 
+
+"""
+Name: InfoMesh 
+Group:
+	Jose Antonio Navas Molina
+	Miguel Angel Vico Moya
+
+"""
  
 from Blender import Scene, Mesh, Window, sys 
 import BPyMessages 
@@ -43,7 +45,9 @@ def computeDegree(mesh):
 		else:
 			v_e[mesh.edges[i].v2.index] = [mesh.edges[i]]
 			
-	average = max = min = len(v_e[0])
+	max = min = len(v_e[0])
+	average = 0.0
+	average = average + len(v_e[0])
 	
 	for i in range(1, len(mesh.verts)):
 		aux = len(v_e[i])
@@ -58,14 +62,16 @@ def computeDegree(mesh):
 	return [max, min, average]
 
 def isConvexEdge(v1, v2, n1, n2):
+	n1.normalize()
+	n2.normalize()
 	ve = v2.co - v1.co
-	vcross = n1.cross(n2)
+	ve.normalize()
 	
-	if vcross[0] == 0 and vcross[1] == 0 and vpcross[2] == 0:
+	vcross = n1.cross(n2)
+	if vcross.length < 0.001:
 		return 0
 	
 	dot = ve.dot(vcross)
-	
 	if dot > 0:
 		return 1
 	
@@ -162,7 +168,7 @@ def computeShells(mesh):
 	return [shells, shells_faces]
 
 def computeGenus(f, v, e, r, s):
-	return ((e+r-f-v)/2)+s
+	return int(((e+r-f-v)/2.0) + s + 0.5)
 	
 def computeVolumeCenterMassCells(mesh, shells):
 	totalVol = 0
@@ -245,11 +251,15 @@ def meshProcessing(me):
 	print "Mesh centroid:  (", round(result[0]), ", ", round(result[1]), ", ", round(result[2]), ")"
 	
 	result = computeDegree(me)
-	print "Vertex degree:  max(", result[0], ") min(", result[1], ") average(", round(result[2]), ")"
+	print "Vertex degree:  max=", result[0], " min=", result[1], " average=", round(result[2])
 	
 	result = computeEdges(me)
-	print "Edges:          total(", result[0]+result[1]+result[2],") boundary(", result[0], ") manifold(", result[1], ") non-manifold(", result[2], ")"
-	print "                concave(", result[3],  ") convex(", result[4], ") planar(", result[5], ") other(", result[6], ")"
+	print "Edges:          total=", result[0]+result[1]+result[2]," boundary=", result[0], " manifold=", result[1], " non-manifold=", result[2]
+	print "                concave=", result[3],  " convex=", result[4], " planar=", result[5], " other=", result[6]
+
+	non_manifold = 0
+	if result[6] > 0:
+		non_manifold = 1
 
 	f = len(me.faces)
 	v = len(me.verts)
@@ -259,9 +269,12 @@ def meshProcessing(me):
 	print "Euler:          F=", f, " V=", v, " E=", e, " R= 0  S=", s, " H=", computeGenus(f, v, e, 0, s)
 		
 	result = computeVolumeCenterMassCells(me, result[1])
-	print "Volume:        ", round(result[0])
 	print "Center of mass: (", round(result[1]), ", ", round(result[2]), ", ", round(result[3]), ")"
-	print "Cells:         ", result[4]
+	print "Volume:        ", round(result[0])
+	if non_manifold:
+		print "Cells:          Undetermined (Non-manifold)"
+	else:
+		print "Cells:         ", result[4]
 	
 	print
 
