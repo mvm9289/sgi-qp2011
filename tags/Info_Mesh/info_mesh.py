@@ -68,7 +68,7 @@ def isConvexEdge(v1, v2, n1, n2):
 	ve.normalize()
 	
 	vcross = n1.cross(n2)
-	if vcross.length < 0.001:
+	if vcross.length < 0.00001:
 		return 0
 	
 	dot = ve.dot(vcross)
