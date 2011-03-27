@@ -25,9 +25,11 @@ def getFaceVertices(mesh):
 			v1 = mesh.faces[i].verts[j]
 			v2 = mesh.faces[i].verts[(j+1)%num_verts]
 			if (v2, v1) in edges_faces:
-				edges_faces[(v2, v1)] = edges_faces[(v2, v1)].append(mesh.faces[i])
+				list = edges_faces[(v2, v1)]
+				list.append(mesh.faces[i])
+				edges_faces[(v2, v1)] = list
 			else:
-				edges_faces[(v1, v2)] = [mesh.faces[i]]
+				edges_faces[(v1, v2)] = [mesh.faces[i],]
 		aux = aux / num_verts
 		face_vertices.append(aux)
 		faces_centroid[mesh.faces[i]] = aux
@@ -35,18 +37,19 @@ def getFaceVertices(mesh):
 
 def getEdgeVertices(mesh, edges_faces, faces_centroid):
 	edge_vertices = []
+	vertices_edges = {}
+	
 	for i in range(len(mesh.edges)):
 		aux = Vector( 0.0, 0.0, 0.0)
 		if (mesh.edges[i].v1, mesh.edges[i].v2) in edges_faces:
 			edge = (mesh.edges[i].v1, mesh.edges[i].v2)
 		else:
 			edge = (mesh.edges[i].v2, mesh.edges[i].v1)
-		
 		for face in edges_faces[edge]:
 			aux = aux + faces_centroid[face]
 		
-		aux = (aux + mesh.edges[i].v1 + mesh.edges[i].v2)/4
-		edge_vertices.append[aux]
+		aux = (aux + mesh.edges[i].v1.co + mesh.edges[i].v2.co)/4
+		edge_vertices.append(aux)
 		
 	return edge_vertices
 		
@@ -58,6 +61,11 @@ def catmullClarkOneStep(mesh, t):
 	faces_centroid = result[2]
 	
 	edge_vertices = getEdgeVertices(mesh, edges_faces, faces_centroid)
+	
+	newVertices = []
+	newVertices.extend(face_vertices)
+	newVertices.extend(edge_vertices)
+	mesh.verts.extend(newVertices)
 	
 def catmullClark(mesh, n, t):
 	for i in range(n):
