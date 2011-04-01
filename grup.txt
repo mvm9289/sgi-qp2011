@@ -1,0 +1,8 @@
+SGI (Interactive Graphics Systems)
+----------------------------------
+
+-- Project 1: Info Mesh --
+
+Group members:
+	Jose Antonio Navas Molina
+	Miguel Angel Vico Moya
