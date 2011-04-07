@@ -106,11 +106,26 @@ def getVertexVertices(mesh, vertex_faces, vertex_edges, faces_centroid):
 		vertex_copy[i] = (F + 2*R + (n - 3)*mesh.verts[i].co)*(1.0/n)
 	
 	return vertex_copy
-		
+
+#def updateFaces(mesh, face_vertices, edge_vertices):
+	#oldNumFaces = len(mesh.faces)
+	
+	#for i in range(oldNumFaces):
+	#	numFaceVerts = len(mesh.faces[i])
+	#	for j in range(numFaceVerts):
+	#		next1 = (j + 1)%numFaceVerts
+	#		next2 = (j + 2)%numFaceVerts
+	#		i1 = edge_vertices[(j, next1)].index # LOS INDICES DE DONDE LOS SACAMOS? xD
+	#		i2 = mesh.faces[i].verts[next1].index
+	#		i3 = edge_vertices[(next1, next2)].index # SERIA LO SUYO TENER LA ESTRUCTURA PA ACCEDER ASI
+	#		i4 = face_vertices[mesh.faces[i]]
+	#		mesh.faces.extend([i1, i2, i3, i4])
+	
+	#mesh.faces.remove(1, range(oldNumFaces)
 
 def catmullClarkOneStep(mesh, t):
 	result = getFaceVertices(mesh)
-	face_vertices = result[0]
+	face_vertices = result[0] # ESTO PARA QUE? --------------------------------------------------------------------------------
 	edges_faces = result[1]
 	faces_centroid = result[2]
 	vertex_faces = result[3]
@@ -126,6 +141,8 @@ def catmullClarkOneStep(mesh, t):
 	
 	#mesh.verts.extend(face_vertices)
 	#mesh.verts.extend(edge_vertices)
+	
+	#updateFaces(mesh, face_vertices, edge_vertices)
 	
 def catmullClark(mesh, n, t):
 	for i in range(n):
