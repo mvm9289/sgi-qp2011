@@ -164,7 +164,9 @@ def catmullClark(mesh, n, t):
 def saveToFile(mesh, filename):
 	f = open(filename, 'wb')
 	for v in mesh.verts:
-		f.write(v.co[0])
+		f.write(str(v.co[0]))
+		f.write(str(v.co[1]))
+		f.write(str(v.co[2]))
 	f.close()
 
 def loadFromFile(filename):
