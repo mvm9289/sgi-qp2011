@@ -161,6 +161,54 @@ def catmullClark(mesh, n, t):
 	for i in range(n):
 		catmullClarkOneStep(mesh, t)
 
+def saveToFile(mesh, filename):
+	f = open(filename, 'wb')
+	for v in mesh.verts:
+		f.write(v.co[0])
+	f.close()
+
+def loadFromFile(filename):
+	f = open(filename, 'wb')
+	verts = []
+	for line in f:
+		verts.append(line)
+		
+	return verts
+		
+def initAnim(object):
+	object.name = "BaseMesh"
+	Blender.Object.Duplicate(1)
+	newObject = Blender.Object.GetSelected()
+	newObject.name = "Subdivided"
+	
+	me = newObject.getData(mesh=1)
+	catmullClark(me, 1, 1.0);
+	
+	newObject.select(0)
+	newObject.restrictRender = 1
+	
+	saveToFile(me, 'catmullT1.dat')
+	
+	scene = Blender.Scene.GetCurrent()
+	for obj in scene.objects:
+		if obj.type == 'Mesh' and "Subdivided" in obj.name:
+			meshT = obj.getData(0, 1)
+			meshT.verts.delete(range(len(meshT.verts)))
+			
+	object.select(1)
+	
+	me = newObject.getData(mesh=1)
+	catmullClark(me, 1, 0.0);
+	
+	saveToFile(me, 'catmullT0.dat')
+	
+def doAnim(mesh, time):
+	vertsT0 = loadFromFile('catmullT0.dat')
+	vertsT1 = loadFromFile('catmullT1.dat')
+	
+	for i in range(len(mesh.verts)):
+		mesh.verts[i].co = (1 - time)*vertsT0[i] + time*vertsT1[i]
+
 def main():
 	ob = bpy.data.scenes.active.objects.active
 	
@@ -173,39 +221,26 @@ def main():
 	Window.WaitCursor(1)
 	
 	me = ob.getData(mesh=1)
-	#t = sys.time()
 	
-	#print 'Mesh name: ', me.name
-	#print 
-	#print ' V= ', len(me.verts) 
-	#print ' E= ', len(me.edges) 
-	#print ' F= ', len(me.faces)
-
-	#print 'Vertex list:'
-	#for i in range(len(me.verts)):
-	#        coord=me.verts[i].co
-	#        print " ", i, ":", coord[0], coord[1], coord[2]
-
-	#print 'Faces list:'
-	#for i in range(len(me.faces)):
-	#        print " ", i, ":", 
-	#        for j in range(len(me.faces[i].verts)):
-	#                print me.faces[i].verts[j].index,
-	#        print
-
-	#print "Edges list:"
-	#for i in range(len(me.edges)):
-	#        print " ", i, ":", 
-	#        print me.edges[i].v1.index, 
-	#        print me.edges[i].v2.index
+	start = Get("staframe")
+	end = Get("endframe")
+	num = end - start
+	current = Get("curframe")
+	time = float(current - start)/num
 	
-	catmullClark(me, 1, 1)
+	saveToFile(me, 'aux')
+	verts = loadFromFile('aux')
 	
-	#print 'Script executed in %.2f seconds' % (sys.time()-t)
-	#print
-	#print
+	for v in verts:
+		print v[0], " ",  v[1], " ",  v[2]
 	
+	#if current == start:
+	#	initAnim(ob)
+	#else:
+	#	doAnim(me, time)
+		
 	Window.WaitCursor(0)
 	
 if __name__ == '__main__':
 	main()
+	
