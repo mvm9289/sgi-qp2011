@@ -162,25 +162,28 @@ def catmullClark(mesh, n, t):
 		catmullClarkOneStep(mesh, t)
 
 def saveToFile(mesh, filename):
-	f = open(filename, 'wb')
+	f = open(filename, 'w+')
 	for v in mesh.verts:
-		f.write(str(v.co[0]))
-		f.write(str(v.co[1]))
-		f.write(str(v.co[2]))
+		out = str(v.co[0]) + "$" + str(v.co[1]) + "$" + str(v.co[2]) + "$\n"
+		f.write(out)
 	f.close()
 
 def loadFromFile(filename):
-	f = open(filename, 'wb')
+	f = open(filename, 'r+')
 	verts = []
 	for line in f:
-		verts.append(line)
-		
+		line = line.split('$')
+		verts.append(Vector(float(line[0]), float(line[1]), float(line[2])))
+	
 	return verts
 		
 def initAnim(object):
 	object.name = "BaseMesh"
-	Blender.Object.Duplicate(1)
-	newObject = Blender.Object.GetSelected()
+	Object.Duplicate(1)
+	object.select(0)
+	
+	objects = Object.GetSelected()
+	newObject = objects[0]
 	newObject.name = "Subdivided"
 	
 	me = newObject.getData(mesh=1)
@@ -189,24 +192,24 @@ def initAnim(object):
 	newObject.select(0)
 	newObject.restrictRender = 1
 	
-	saveToFile(me, 'catmullT1.dat')
+	saveToFile(me, '/tmp/catmullT1.dat')
+			
+	object.select(1)
 	
-	scene = Blender.Scene.GetCurrent()
+	me = object.getData(mesh=1)
+	catmullClark(me, 1, 0.0);
+	
+	saveToFile(me, '/tmp/catmullT0.dat')
+	
+	scene = Scene.GetCurrent()
 	for obj in scene.objects:
 		if obj.type == 'Mesh' and "Subdivided" in obj.name:
 			meshT = obj.getData(0, 1)
 			meshT.verts.delete(range(len(meshT.verts)))
-			
-	object.select(1)
-	
-	me = newObject.getData(mesh=1)
-	catmullClark(me, 1, 0.0);
-	
-	saveToFile(me, 'catmullT0.dat')
 	
 def doAnim(mesh, time):
-	vertsT0 = loadFromFile('catmullT0.dat')
-	vertsT1 = loadFromFile('catmullT1.dat')
+	vertsT0 = loadFromFile('/tmp/catmullT0.dat')
+	vertsT1 = loadFromFile('/tmp/catmullT1.dat')
 	
 	for i in range(len(mesh.verts)):
 		mesh.verts[i].co = (1 - time)*vertsT0[i] + time*vertsT1[i]
@@ -230,16 +233,10 @@ def main():
 	current = Get("curframe")
 	time = float(current - start)/num
 	
-	saveToFile(me, 'aux')
-	verts = loadFromFile('aux')
-	
-	for v in verts:
-		print v[0], " ",  v[1], " ",  v[2]
-	
-	#if current == start:
-	#	initAnim(ob)
-	#else:
-	#	doAnim(me, time)
+	if current == start:
+		initAnim(ob)
+	else:
+		doAnim(me, time)
 		
 	Window.WaitCursor(0)
 	
