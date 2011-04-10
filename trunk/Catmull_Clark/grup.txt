@@ -1,0 +1,12 @@
+SGI (Interactive Graphics Systems)
+----------------------------------
+
+-- Project 2: Catmull-Clark --
+
+Group members:
+	Jose Antonio Navas Molina
+	Miguel Angel Vico Moya
+
+Demostration videos:
+	http://www.youtube.com/watch?v=bju5yhb2kDg
+	http://www.youtube.com/watch?v=WMeqtsbi5vI
