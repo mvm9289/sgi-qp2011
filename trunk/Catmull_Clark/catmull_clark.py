@@ -1,64 +1,75 @@
 #!BPY
 
-"""
+
+"""""""""""""""""""""""""""""""""
 Name: CatmullClark
 Group:
 			Jose Antonio Navas Molina
 			Miguel Angel Vico Moya
-"""
+			
+"""""""""""""""""""""""""""""""""
+
+
+############## IMPORTS ##############
 
 from Blender import *
 from Blender.Mathutils import *
 import BPyMessages
 import bpy
 
+
+############## AUXILIARY TOPOLOGIES ##############
+
 def computeVF(mesh):
 	VF = [ [] for i in range(len(mesh.verts))]
-	for i in range(len(mesh.faces)):
-		for j in range(len(mesh.faces[i].verts)):
-			VF[mesh.faces[i].verts[j].index].append(i)
+	for f in mesh.faces:
+		for v in f.verts:
+			VF[v.index].append(f.index)
 	
 	return VF
 
 def computeVEandEIndex(mesh):
 	VE = [ [] for i in range(len(mesh.verts)) ]
 	Eidx = {}
-	for i in range(len(mesh.edges)):
-		VE[mesh.edges[i].v1.index].append(i)
-		VE[mesh.edges[i].v2.index].append(i)
+	for e in mesh.edges:
+		VE[e.v1.index].append(e.index)
+		VE[e.v2.index].append(e.index)
 		
-		key1 = (mesh.edges[i].v1.index, mesh.edges[i].v2.index)
-		key2 = (mesh.edges[i].v2.index, mesh.edges[i].v1.index)
-		Eidx[key1] = i
-		Eidx[key2] = i
+		key1 = (e.v1.index, e.v2.index)
+		key2 = (e.v2.index, e.v1.index)
+		Eidx[key1] = e.index
+		Eidx[key2] = e.index
 		
 	return [VE, Eidx]
 
 def computeEF(mesh):
 	EF = {}
-	for i in range(len(mesh.edges)):
-		EF[(mesh.edges[i].v1.index, mesh.edges[i].v2.index)] = []
-	for i in range(len(mesh.faces)):
-		numFaceVerts = len(mesh.faces[i].verts)
+	for e in mesh.edges:
+		EF[(e.v1.index, e.v2.index)] = []
+	for f in mesh.faces:
+		numFaceVerts = len(f.verts)
 		for j in range(numFaceVerts):
 			j1 = (j + 1)%numFaceVerts
-			key1 = (mesh.faces[i].verts[j].index, mesh.faces[i].verts[j1].index)
-			key2 = (mesh.faces[i].verts[j1].index, mesh.faces[i].verts[j].index)
+			key1 = (f.verts[j].index, f.verts[j1].index)
+			key2 = (f.verts[j1].index, f.verts[j].index)
 			if key1 in EF:
-				EF[key1].append(i)
+				EF[key1].append(f.index)
 			elif key2 in EF:
-				EF[key2].append(i)
+				EF[key2].append(f.index)
 	
 	return EF
+
+
+############## CATMULL CLARK ##############
 
 def getFaceVertices(mesh):
 	face_vertices = []
 	
-	for i in range(len(mesh.faces)):
+	for f in mesh.faces:
 		aux = Vector( 0.0, 0.0, 0.0)
-		num_verts = len(mesh.faces[i].verts)
-		for j in range(num_verts):
-			aux = aux + mesh.faces[i].verts[j].co	
+		num_verts = len(f.verts)
+		for v in f.verts:
+			aux = aux + v.co	
 		aux = aux / num_verts
 		face_vertices.append(aux)
 		
@@ -67,17 +78,20 @@ def getFaceVertices(mesh):
 def getEdgeVertices(mesh, V, EF, t):
 	edge_vertices = []
 	
-	for i in range(len(mesh.edges)):
+	for e in mesh.edges:
+		key1 = (e.v1.index, e.v2.index)
+		key2 = (e.v2.index, e.v1.index)
+		if key1 in EF:
+			edge = key1
+		elif key2 in EF:
+			edge = key2
+		
 		aux = Vector( 0.0, 0.0, 0.0)
-		if (mesh.edges[i].v1.index, mesh.edges[i].v2.index) in EF:
-			edge = (mesh.edges[i].v1.index, mesh.edges[i].v2.index)
-		else:
-			edge = (mesh.edges[i].v2.index, mesh.edges[i].v1.index)
 		for j in range(len(EF[edge])):
 			aux = aux + mesh.verts[V + EF[edge][j]].co
 		
-		aux = (aux + mesh.edges[i].v1.co + mesh.edges[i].v2.co)/4
-		midpoint = (mesh.edges[i].v1.co + mesh.edges[i].v2.co)/2
+		aux = (aux + e.v1.co + e.v2.co)/4
+		midpoint = (e.v1.co + e.v2.co)/2
 		
 		aux = (1 - t)*midpoint + t*aux
 		 
@@ -87,16 +101,16 @@ def getEdgeVertices(mesh, V, EF, t):
 
 def computeF(mesh, V, faces):
 	centroid = Vector( 0.0, 0.0, 0.0 )
-	for face in faces:
-		centroid = centroid + mesh.verts[V + face].co
+	for f in faces:
+		centroid = centroid + mesh.verts[V + f].co
 	centroid = centroid/len(faces)
 	
 	return centroid
 
 def computeR(mesh, edges):
 	centroid = Vector( 0.0, 0.0, 0.0 )
-	for edge in edges:
-		midpoint = (mesh.edges[edge].v1.co + mesh.edges[edge].v2.co)/2
+	for e in edges:
+		midpoint = (mesh.edges[e].v1.co + mesh.edges[e].v2.co)/2
 		centroid = centroid + midpoint
 	centroid = centroid/len(edges)
 	
@@ -117,21 +131,23 @@ def getVertexVertices(mesh, V, VF, VE):
 	return vertex_copy
 
 def updateFaces(mesh, V, F, Eidx):
-	for i in range(F):
-		numFaceVerts = len(mesh.faces[i].verts)
-		i1 = V + i # Centroid index
+	aux = []
+	for f in mesh.faces:
+		numFaceVerts = len(f.verts)
+		i1 = V + f.index # Centroid index
 		for j in range(numFaceVerts):
 			j1 = (j + 1)%numFaceVerts
 			j2 = (j + 2)%numFaceVerts
 			
-			key1 = (mesh.faces[i].verts[j].index, mesh.faces[i].verts[j1].index)
-			key2 = (mesh.faces[i].verts[j1].index, mesh.faces[i].verts[j2].index)
+			key1 = (f.verts[j].index, f.verts[j1].index)
+			key2 = (f.verts[j1].index, f.verts[j2].index)
 			
 			i2 = mesh.verts[V + F + Eidx[key1]].index
-			i3 = mesh.faces[i].verts[j1].index
+			i3 = f.verts[j1].index
 			i4 = mesh.verts[V + F + Eidx[key2]].index
-			mesh.faces.extend([i1, i2, i3, i4])
+			aux.append([i1, i2, i3, i4])
 	
+	mesh.faces.extend(aux)
 	mesh.faces.delete(1, range(F))
 
 def catmullClarkOneStep(mesh, t):
@@ -152,14 +168,17 @@ def catmullClarkOneStep(mesh, t):
 	mesh.verts.extend(edge_vertices)
 	
 	vertex_vertices = getVertexVertices(mesh, oldNumV, VF, VE)
-	for i in range(len(mesh.verts)):
-		mesh.verts[i].co = (1 - t)*mesh.verts[i].co + t*vertex_vertices[i]
+	for v in mesh.verts:
+		v.co = (1 - t)*v.co + t*vertex_vertices[v.index]
 	
 	updateFaces(mesh, oldNumV, oldNumF, Eidx)
 	
 def catmullClark(mesh, n, t):
 	for i in range(n):
 		catmullClarkOneStep(mesh, t)
+
+
+############## MAIN ##############
 
 def main():
 	ob = bpy.data.scenes.active.objects.active
@@ -173,7 +192,7 @@ def main():
 	Window.WaitCursor(1)
 	
 	me = ob.getData(mesh=1)
-	#t = sys.time()
+	t = sys.time()
 	
 	#print 'Mesh name: ', me.name
 	#print 
@@ -201,9 +220,9 @@ def main():
 	
 	catmullClark(me, 1, 1)
 	
-	#print 'Script executed in %.2f seconds' % (sys.time()-t)
-	#print
-	#print
+	print 'Script executed in %.2f seconds' % (sys.time()-t)
+	print
+	print
 	
 	Window.WaitCursor(0)
 	
