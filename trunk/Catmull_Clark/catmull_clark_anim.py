@@ -20,7 +20,7 @@ import bpy
 
 ############## GLOBAL VARS ##############
 
-FILE_PATH = 'C:/Temp'
+FILE_PATH = '/tmp'
 CATMULL_CLARK_STEPS = 4
 FRAMES_BY_STEP = 30
 MAX_FRAMES = (CATMULL_CLARK_STEPS + 1)*FRAMES_BY_STEP
