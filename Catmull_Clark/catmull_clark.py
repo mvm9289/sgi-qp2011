@@ -69,8 +69,8 @@ def computeEF(mesh):
 
 def computeArea(mesh):
 	area = 0.0
-	for i in range(len(mesh.faces)):
-		area = area + mesh.faces[i].area
+	for f in mesh.faces:
+		area = area + f.area
 	
 	return area
 
