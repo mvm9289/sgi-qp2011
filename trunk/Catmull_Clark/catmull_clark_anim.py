@@ -21,9 +21,7 @@ import bpy
 ############## GLOBAL VARS ##############
 
 FILE_PATH = '/tmp'
-CATMULL_CLARK_STEPS = 4
-FRAMES_BY_STEP = 30
-MAX_FRAMES = (CATMULL_CLARK_STEPS + 1)*FRAMES_BY_STEP
+CATMULL_CLARK_STEPS = 3
 
 
 ############## AUXILIARY TOPOLOGIES ##############
@@ -74,8 +72,8 @@ def getFaceVertices(mesh):
 	face_vertices = []
 	
 	for f in mesh.faces:
-		aux = Vector( 0.0, 0.0, 0.0)
-		num_verts = len(f.verts)
+		aux = Vector( 0.0, 0.0, 0.0 )
+		num_verts = float(len(f.verts))
 		for v in f.verts:
 			aux = aux + v.co	
 		aux = aux / num_verts
@@ -94,14 +92,14 @@ def getEdgeVertices(mesh, V, EF, t):
 		elif key2 in EF:
 			edge = key2
 		
-		aux = Vector( 0.0, 0.0, 0.0)
+		aux = Vector( 0.0, 0.0, 0.0 )
 		for j in range(len(EF[edge])):
 			aux = aux + mesh.verts[V + EF[edge][j]].co
 		
-		aux = (aux + e.v1.co + e.v2.co)/4
-		midpoint = (e.v1.co + e.v2.co)/2
+		aux = (aux + e.v1.co + e.v2.co)/4.0
+		midpoint = (e.v1.co + e.v2.co)/2.0
 		
-		aux = (1 - t)*midpoint + t*aux
+		aux = (1.0 - t)*midpoint + t*aux
 		 
 		edge_vertices.append(aux)
 		
@@ -111,7 +109,7 @@ def computeF(mesh, V, faces):
 	centroid = Vector( 0.0, 0.0, 0.0 )
 	for f in faces:
 		centroid = centroid + mesh.verts[V + f].co
-	centroid = centroid/len(faces)
+	centroid = centroid/float(len(faces))
 	
 	return centroid
 
@@ -120,7 +118,7 @@ def computeR(mesh, edges):
 	for e in edges:
 		midpoint = (mesh.edges[e].v1.co + mesh.edges[e].v2.co)/2
 		centroid = centroid + midpoint
-	centroid = centroid/len(edges)
+	centroid = centroid/float(len(edges))
 	
 	return centroid
 
@@ -133,8 +131,8 @@ def getVertexVertices(mesh, V, VF, VE):
 	for i in range(V):
 		F = computeF(mesh, V, VF[mesh.verts[i].index])
 		R = computeR(mesh, VE[mesh.verts[i].index])
-		n = len(VE[mesh.verts[i].index])
-		vertex_copy[i] = (F + 2*R + (n - 3)*mesh.verts[i].co)*(1.0/n)
+		n = float(len(VE[mesh.verts[i].index]))
+		vertex_copy[i] = (F + 2.0*R + (n - 3.0)*mesh.verts[i].co)*(1.0/n)
 	
 	return vertex_copy
 
@@ -177,7 +175,7 @@ def catmullClarkOneStep(mesh, t):
 	
 	vertex_vertices = getVertexVertices(mesh, oldNumV, VF, VE)
 	for v in mesh.verts:
-		v.co = (1 - t)*v.co + t*vertex_vertices[v.index]
+		v.co = (1.0 - t)*v.co + t*vertex_vertices[v.index]
 	
 	updateFaces(mesh, oldNumV, oldNumF, Eidx)
 	
@@ -244,7 +242,7 @@ def doAnim(mesh, time):
 	vertsT1 = loadFromFile(FILE_PATH + '/catmullT1.dat')
 	
 	for v in mesh.verts:
-		v.co = (1 - time)*vertsT0[v.index] + time*vertsT1[v.index]
+		v.co = (1.0 - time)*vertsT0[v.index] + time*vertsT1[v.index]
 
 
 ############## MAIN ##############
@@ -268,11 +266,10 @@ def main():
 	current = Get("curframe")
 	time = float(current - start)/num
 	
-	if current < MAX_FRAMES:
-		if current == start:
-			initAnim(ob)
-		else:
-			doAnim(me, time)
+	if current == start:
+		initAnim(ob)
+	else:
+		doAnim(me, time)
 		
 	Window.WaitCursor(0)
 	

@@ -18,6 +18,11 @@ import BPyMessages
 import bpy
 
 
+############## GLOBAL VARS ##############
+
+CATMULL_CLARK_STEPS = 3
+
+
 ############## AUXILIARY TOPOLOGIES ##############
 
 def computeVF(mesh):
@@ -60,14 +65,57 @@ def computeEF(mesh):
 	return EF
 
 
+############## INFO MESH ##############
+
+def computeArea(mesh):
+	area = 0.0
+	for i in range(len(mesh.faces)):
+		area = area + mesh.faces[i].area
+	
+	return area
+
+def computeVolume(mesh):
+	M = [ [5.0,5.0,5.0] , [11.0,2.0,2.0] , [2.0,11.0,2.0] , [2.0,2.0,11.0] ]
+
+	totalVol = 0.0
+	for f in mesh.faces:
+		i = f.verts[0]
+		j = f.verts[1]
+		for v in range(2,len(f.verts)):
+			k = f.verts[v]
+			nx = (j.co[1] - i.co[1]) * (k.co[2] - j.co[2]) - (k.co[1] - j.co[1]) * (j.co[2] - i.co[2])
+			ny = (k.co[0] - j.co[0]) * (j.co[2] - i.co[2]) - (j.co[0] - i.co[0]) * (k.co[2] - j.co[2])
+			nz = (j.co[0] - i.co[0]) * (k.co[1] - j.co[1]) - (k.co[0] - j.co[0]) * (j.co[1] - i.co[1])
+			
+			for l in range(4):
+				w = 0.0
+				if l == 0:
+					w = -27.0/96.0
+				else:
+					w = 25.0/96.0
+				
+				x = (M[l][0] * i.co[0] + M[l][1] * j.co[0] + M[l][2] * k.co[0] )/15.0
+				y = (M[l][0] * i.co[1] + M[l][1] * j.co[1] + M[l][2] * k.co[1] )/15.0
+				z = (M[l][0] * i.co[2] + M[l][1] * j.co[2] + M[l][2] * k.co[2] )/15.0
+				
+				totalVol = totalVol + w * (x*nx + y*ny + z*nz) / 3.0
+				
+			j = k
+			
+	return totalVol
+
+def round(a):
+	return int(a*1000+0.5)/1000.0
+
+
 ############## CATMULL CLARK ##############
 
 def getFaceVertices(mesh):
 	face_vertices = []
 	
 	for f in mesh.faces:
-		aux = Vector( 0.0, 0.0, 0.0)
-		num_verts = len(f.verts)
+		aux = Vector( 0.0, 0.0, 0.0 )
+		num_verts = float(len(f.verts))
 		for v in f.verts:
 			aux = aux + v.co	
 		aux = aux / num_verts
@@ -86,14 +134,14 @@ def getEdgeVertices(mesh, V, EF, t):
 		elif key2 in EF:
 			edge = key2
 		
-		aux = Vector( 0.0, 0.0, 0.0)
+		aux = Vector( 0.0, 0.0, 0.0 )
 		for j in range(len(EF[edge])):
 			aux = aux + mesh.verts[V + EF[edge][j]].co
 		
-		aux = (aux + e.v1.co + e.v2.co)/4
-		midpoint = (e.v1.co + e.v2.co)/2
+		aux = (aux + e.v1.co + e.v2.co)/4.0
+		midpoint = (e.v1.co + e.v2.co)/2.0
 		
-		aux = (1 - t)*midpoint + t*aux
+		aux = (1.0 - t)*midpoint + t*aux
 		 
 		edge_vertices.append(aux)
 		
@@ -103,16 +151,16 @@ def computeF(mesh, V, faces):
 	centroid = Vector( 0.0, 0.0, 0.0 )
 	for f in faces:
 		centroid = centroid + mesh.verts[V + f].co
-	centroid = centroid/len(faces)
+	centroid = centroid/float(len(faces))
 	
 	return centroid
 
 def computeR(mesh, edges):
 	centroid = Vector( 0.0, 0.0, 0.0 )
 	for e in edges:
-		midpoint = (mesh.edges[e].v1.co + mesh.edges[e].v2.co)/2
+		midpoint = (mesh.edges[e].v1.co + mesh.edges[e].v2.co)/2.0
 		centroid = centroid + midpoint
-	centroid = centroid/len(edges)
+	centroid = centroid/float(len(edges))
 	
 	return centroid
 
@@ -125,8 +173,8 @@ def getVertexVertices(mesh, V, VF, VE):
 	for i in range(V):
 		F = computeF(mesh, V, VF[mesh.verts[i].index])
 		R = computeR(mesh, VE[mesh.verts[i].index])
-		n = len(VE[mesh.verts[i].index])
-		vertex_copy[i] = (F + 2*R + (n - 3)*mesh.verts[i].co)*(1.0/n)
+		n = float(len(VE[mesh.verts[i].index]))
+		vertex_copy[i] = (F + 2.0*R + (n - 3.0)*mesh.verts[i].co)*(1.0/n)
 	
 	return vertex_copy
 
@@ -169,13 +217,17 @@ def catmullClarkOneStep(mesh, t):
 	
 	vertex_vertices = getVertexVertices(mesh, oldNumV, VF, VE)
 	for v in mesh.verts:
-		v.co = (1 - t)*v.co + t*vertex_vertices[v.index]
+		v.co = (1.0 - t)*v.co + t*vertex_vertices[v.index]
 	
 	updateFaces(mesh, oldNumV, oldNumF, Eidx)
 	
 def catmullClark(mesh, n, t):
+	print 'F =', len(mesh.faces), ', E =', len(mesh.edges), ', V =', len(mesh.verts), ', Area =', round(computeArea(mesh)), ', Volum =', round(computeVolume(mesh))
+	
 	for i in range(n):
 		catmullClarkOneStep(mesh, t)
+	
+	print 'F =', len(mesh.faces), ', E =', len(mesh.edges), ', V =', len(mesh.verts), ', Area =', round(computeArea(mesh)), ', Volum =', round(computeVolume(mesh))
 
 
 ############## MAIN ##############
@@ -218,7 +270,7 @@ def main():
 	#        print me.edges[i].v1.index, 
 	#        print me.edges[i].v2.index
 	
-	catmullClark(me, 1, 1)
+	catmullClark(me, CATMULL_CLARK_STEPS, 1.0)
 	
 	print 'Script executed in %.2f seconds' % (sys.time()-t)
 	print
