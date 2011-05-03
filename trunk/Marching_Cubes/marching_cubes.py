@@ -55,7 +55,7 @@ def marching_cubes(dades, N, isovalue):
 					fIndex = []
 					for e in f:
 						v = Vector(float(i - N/2), float(j - N/2), float(k - N/2))
-						vertex = Vector(float(i - N/2), float(j - N/2), float(k - N/2))
+						vertex = Vector(float(i), float(j), float(k))
 						if e == 0:
 							#v0  v4
 							vertex.z = vertex.z + interpolate(v0, v4, isovalue)
@@ -135,6 +135,9 @@ def marching_cubes(dades, N, isovalue):
 						else:
 							vertsIndex[(v.x, v.y, v.z)] = len(verts)
 							vIndex = len(verts)
+							vertex.x = (vertex.x - N/2) * 2 / N
+							vertex.y = (vertex.y - N/2) * 2 / N
+							vertex.z = (vertex.z - N/2) * 2 / N
 							verts.append(vertex)
 						
 						fIndex.append(vIndex)
