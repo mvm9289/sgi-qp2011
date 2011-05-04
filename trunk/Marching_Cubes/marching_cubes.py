@@ -23,6 +23,7 @@ def marching_cubes(dades, N, isovalue):
 	for i in range(N-1):
 		for j in range(N-1):
 			for k in range(N-1):
+				# Extract values
 				v0 = dades[i*N*N + j*N + k]
 				v1 = dades[(i + 1)*N*N + j*N + k]
 				v2 = dades[i*N*N + (j + 1)*N + k]
@@ -32,117 +33,84 @@ def marching_cubes(dades, N, isovalue):
 				v6 = dades[i*N*N + (j + 1)*N + k + 1]
 				v7 = dades[(i + 1)*N*N + (j + 1)*N + k + 1]
 				
-				ltPos = 0
+				# Find MC configuration
+				lutPos = 0
 				if v0 < isovalue:
-					ltPos = ltPos + 1
+					lutPos = lutPos + 1
 				if v1 < isovalue:
-					ltPos = ltPos + 2
+					lutPos = lutPos + 2
 				if v2 < isovalue:
-					ltPos = ltPos + 4
+					lutPos = lutPos + 4
 				if v3 < isovalue:
-					ltPos = ltPos + 8
+					lutPos = lutPos + 8
 				if v4 < isovalue:
-					ltPos = ltPos + 16
+					lutPos = lutPos + 16
 				if v5 < isovalue:
-					ltPos = ltPos + 32
+					lutPos = lutPos + 32
 				if v6 < isovalue:
-					ltPos = ltPos + 64
+					lutPos = lutPos + 64
 				if v7 < isovalue:
-					ltPos = ltPos + 128
+					lutPos = lutPos + 128
 				
-				fList = lut[ltPos]
-				for f in fList:
-					fIndex = []
+				# Create vertices and faces
+				facesList = lut[lutPos]
+				for f in facesList:
+					facesIndex = []
 					for e in f:
-						v = Vector(float(i - N/2), float(j - N/2), float(k - N/2))
-						vertex = Vector(float(i), float(j), float(k))
-						if e == 0:
-							#v0  v4
-							vertex.z = vertex.z + interpolate(v0, v4, isovalue)
-							v.z = v.z + 0.5
-						if e == 1:
-							#v4  v5
-							vertex.z = vertex.z + 1.0
-							vertex.x = vertex.x + interpolate(v4, v5, isovalue)
-							v.z = v.z + 1.0
-							v.x = v.x + 0.5
-						if e == 2:
-							#v5  v1
-							vertex.z = vertex.z + interpolate(v1, v5, isovalue)
-							vertex.x = vertex.x + 1.0
-							v.z = v.z + 0.5
-							v.x = v.x + 1.0
-						if e == 3:
-							#v1  v0
-							vertex.x = vertex.x + interpolate(v0, v1, isovalue)
-							v.x = v.x + 0.5
-						if e == 4:
-							#v2  v6
-							vertex.y = vertex.y + 1.0
-							vertex.z = vertex.z + interpolate(v2, v6, isovalue)
-							v.y = v.y + 1.0
-							v.z = v.z + 0.5
-						if e == 5:
-							#v6  v7
-							vertex.y = vertex.y + 1.0
-							vertex.z = vertex.z + 1.0
-							vertex.x = vertex.x + interpolate(v6, v7, isovalue)
-							v.y = v.y + 1.0
-							v.z = v.z + 1.0
-							v.x = v.x + 0.5
-						if e == 6:
-							#v7  v3
-							vertex.y = vertex.y + 1.0
-							vertex.z = vertex.z + interpolate(v3, v7, isovalue)
-							vertex.x = vertex.x + 1.0
-							v.y = v.y + 1.0
-							v.z = v.z + 0.5
-							v.x = v.x + 1.0
-						if e == 7:
-							#v3  v2
-							vertex.y = vertex.y + 1.0
-							vertex.x = vertex.x + interpolate(v3, v2, isovalue)
-							v.y = v.y + 1.0
-							v.x = v.x + 0.5
-						if e == 8:
-							#v4  v6
-							vertex.y = vertex.y + interpolate(v4, v6, isovalue)
-							vertex.z = vertex.z + 1.0
-							v.y = v.y + 0.5
-							v.z = v.z + 1.0
-						if e == 9:
-							#v5  v7
-							vertex.y = vertex.y + interpolate(v5, v7, isovalue)
-							vertex.x = vertex.x + 1.0
-							vertex.z = vertex.z + 1.0
-							v.y = v.y + 0.5
-							v.x = v.x + 1.0
-							v.z = v.z + 1.0
-						if e == 10:
-							#v0  v2
-							vertex.y = vertex.y + interpolate(v0, v2, isovalue)
-							v.y = v.y + 0.5
-						if e == 11:
-							#v1  v3
-							vertex.y = vertex.y + interpolate(v1, v3, isovalue)
-							vertex.x = vertex.x + 1.0
-							v.y = v.y + 0.5
-							v.x = v.x + 1.0
+						falseVertex = Vector(float(i), float(j), float(k))
+						realVertex = Vector(float(i), float(j), float(k))
+						if e == 0: #v0  v4
+							realVertex = Vector(float(i), float(j), float(k) + interpolate(v0, v4, isovalue))
+							falseVertex = Vector(float(i), float(j), float(k) + 0.5)
+						elif e == 1: #v4  v5
+							realVertex = Vector(float(i) + interpolate(v4, v5, isovalue), float(j), float(k) + 1.0)
+							falseVertex = Vector(float(i) + 0.5, float(j), float(k) + 1.0)
+						elif e == 2: #v5  v1
+							realVertex = Vector(float(i) + 1.0, float(j), float(k) + interpolate(v1, v5, isovalue))
+							falseVertex = Vector(float(i) + 1.0, float(j), float(k) + 0.5)
+						elif e == 3: #v1  v0
+							realVertex = Vector(float(i) + interpolate(v0, v1, isovalue), float(j), float(k))
+							falseVertex = Vector(float(i) + 0.5, float(j), float(k))
+						elif e == 4: #v2  v6
+							realVertex = Vector(float(i), float(j) + 1.0, float(k) + interpolate(v2, v6, isovalue))
+							falseVertex = Vector(float(i), float(j) + 1.0, float(k) + 0.5)
+						elif e == 5: #v6  v7
+							realVertex = Vector(float(i) + interpolate(v6, v7, isovalue), float(j) + 1.0, float(k) + 1.0)
+							falseVertex = Vector(float(i) + 0.5, float(j) + 1.0, float(k) + 1.0)
+						elif e == 6: #v7  v3
+							realVertex = Vector(float(i) + 1.0, float(j) + 1.0, float(k) + interpolate(v3, v7, isovalue))
+							falseVertex = Vector(float(i) + 1.0, float(j) + 1.0, float(k) + 0.5)
+						elif e == 7: #v3  v2
+							realVertex = Vector(float(i) + interpolate(v3, v2, isovalue), float(j) + 1.0, float(k))
+							falseVertex = Vector(float(i) + 0.5, float(j) + 1.0, float(k))
+						elif e == 8: #v4  v6
+							realVertex = Vector(float(i), float(j) + interpolate(v4, v6, isovalue), float(k) + 1.0)
+							falseVertex = Vector(float(i), float(j) + 0.5, float(k) + 1.0)
+						elif e == 9: #v5  v7
+							realVertex = Vector(float(i) + 1.0, float(j) + interpolate(v5, v7, isovalue), float(k) + 1.0)
+							falseVertex = Vector(float(i) + 1.0, float(j) + 0.5, float(k) + 1.0)
+						elif e == 10: #v0  v2
+							realVertex = Vector(float(i), float(j) + interpolate(v0, v2, isovalue), float(k))
+							falseVertex = Vector(float(i), float(j) + 0.5, float(k))
+						elif e == 11: #v1  v3
+							realVertex = Vector(float(i) + 1.0, float(j) + interpolate(v1, v3, isovalue), float(k))
+							falseVertex = Vector(float(i) + 1.0, float(j) + 0.5, float(k))
 						
-						vIndex = 0
-						if (v.x, v.y, v.z) in vertsIndex:
-							vIndex = vertsIndex[(v.x, v.y, v.z)]
+						vertexIndex = 0
+						key = (falseVertex.x, falseVertex.y, falseVertex.z)
+						if key in vertsIndex:
+							vertexIndex = vertsIndex[key]
 						else:
-							vertsIndex[(v.x, v.y, v.z)] = len(verts)
-							vIndex = len(verts)
-							vertex.x = (vertex.x - N/2) * 2 / N
-							vertex.y = (vertex.y - N/2) * 2 / N
-							vertex.z = (vertex.z - N/2) * 2 / N
-							verts.append(vertex)
+							vertsIndex[key] = len(verts)
+							vertexIndex = len(verts)
+							realVertex.x = (realVertex.x - N/2) * 2 / N
+							realVertex.y = (realVertex.y - N/2) * 2 / N
+							realVertex.z = (realVertex.z - N/2) * 2 / N
+							verts.append(realVertex)
 						
-						fIndex.append(vIndex)
+						facesIndex.append(vertexIndex)
 				
-					faces.append(fIndex)
+					faces.append(facesIndex)
 
 	return (verts, faces)
 
