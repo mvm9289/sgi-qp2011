@@ -15,9 +15,16 @@ Group:
 import BPyAddMesh
 import Blender
 from taulaMC import lut
-from Blender import Scene, Mesh, Window, sys
+from Blender import *
 import BPyMessages
 import bpy
+
+
+############## GLOBAL VARS ##############
+
+DATA_FILE = '/Users/mvm9289/Desktop/FIB/SGI/trunk/Marching_Cubes/examples/Blooby.txt'
+INI_ISOVALUE = -10.0
+FIN_ISOVALUE = 10.0
 
 
 ############## MARCHING CUBES ##############
@@ -126,71 +133,12 @@ def marching_cubes(dades, N, isovalue):
 	return (verts, faces)
 
 
-############## INFO MESH ##############
-
-def computeShells(mesh):
-	e_f = {}
-	visited = []
-	for i in range(len(mesh.faces)):
-		visited.append(0)
-		n = len(mesh.faces[i].verts)
-		for j in range(n):
-			aux = (mesh.faces[i].verts[j].index, mesh.faces[i].verts[(j+1)%n].index)
-			if aux in e_f:
-				e_f[aux].append(i)
-			else:
-				e_f[aux] = [i]
-                                
-	m = 0
-	shells = 0
-	stack = []
-	shells_faces = []
-	while m < len(mesh.faces):
-		shells = shells + 1
-		faces = []
-		                
-		f = 0
-		for i in range(len(visited)):
-			if visited[i] == 0:
-				f = i
-				break
-               
-		stack.append(f)
-		while len(stack) != 0:
-			f = stack.pop()
-			if visited[f] == 0:
-				faces.append(f)
-				visited[f] = 1
-				m = m + 1
-				n = len(mesh.faces[f].verts)
-				for j in range(n):
-					aux = (mesh.faces[f].verts[(j+1)%n].index, mesh.faces[f].verts[j].index)
-					if aux in e_f:
-						for i in range(len(e_f[aux])):
-							if visited[e_f[aux][i]] == 0:
-								stack.append(e_f[aux][i])
-
-		shells_faces.append(faces);
-                                                        
-	return [shells, shells_faces]
-
-def computeGenus(f, v, e, r, s):
-	return int(((e+r-f-v)/2.0) + s + 0.5)
-
-
 ############## MAIN ##############
 
-def file_callback(filename):
-	
-	# Demanar isovalue
-	Draw = Blender.Draw
-	ISOVALUE = Draw.Create(0.0)
-	if not Draw.PupBlock('Marching Cubes', [('Isovalue:', ISOVALUE,  -100, 100, 'Valor isodensitat (isovalue).'),]):
-		return
-	
+def main():
 	# Llegir dades		
 	dades=[]
-	file = open(filename, "r")
+	file = open(DATA_FILE, "r")
 	N = int(file.readline())
 	print "Llegint dades: ", N, "x", N, "x", N
 	for i in range(N*N*N):
@@ -198,33 +146,33 @@ def file_callback(filename):
 	print "Dades llegides correctament"
 	file.close()
 	
+	
+	Window.EditMode(0)
+	
+	Window.WaitCursor(1)
+	
+	scene = Scene.GetCurrent()
+	for obj in scene.objects:
+		if obj.type == 'Mesh' and "MC" in obj.name:
+			meshT = obj.getData(0, 1)
+			meshT.verts.delete(range(len(meshT.verts)))
+			scene.objects.unlink(obj)
+	
+	start = Get("staframe")
+	end = Get("endframe")
+	num = end - start
+	current = Get("curframe")
+	time = float(current - start)/num
+	
 	# Generar vertexs i cares
-	(verts, faces) = marching_cubes(dades, N, ISOVALUE.val)
+	(verts, faces) = marching_cubes(dades, N, INI_ISOVALUE - (INI_ISOVALUE - FIN_ISOVALUE)*time)
 	
 	# Afegir la malla a blender
 	BPyAddMesh.add_mesh_simple('MC', verts, [], faces)
 	
-	ob = bpy.data.scenes.active.objects.active
+	scene.update()
 	
-	if not ob or ob.type != 'Mesh':
-		BPyMessages.Error_NoMeshActive()
-		return
-	
-	Window.EditMode(0)
-	Window.WaitCursor(1)
-	mesh = ob.getData(mesh=1)
-	
-	f = len(mesh.faces)
-	v = len(mesh.verts)
-	e = len(mesh.edges)
-	result = computeShells(mesh)
-	s = result[0]
-	print "Euler:          F=", f, " V=", v, " E=", e, " R= 0  S=", s, " H=", computeGenus(f, v, e, 0, s)
-	
-
-
-def main():
-	Blender.Window.FileSelector(file_callback, 'Tria fitxer de dades') 
+	Window.WaitCursor(0)
 
 
 main()

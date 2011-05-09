@@ -1,0 +1,11 @@
+SGI (Interactive Graphics Systems)
+----------------------------------
+
+-- Project 3: Marching Cubes --
+
+Group members:
+	Jose Antonio Navas Molina
+	Miguel Angel Vico Moya
+
+Demostration videos:
+	http://www.youtube.com/watch?v=5S5TRDQk3x4
