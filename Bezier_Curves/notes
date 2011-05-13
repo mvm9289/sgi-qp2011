@@ -1,0 +1,33 @@
+usamples -> samples along the curve
+vsamples -> samples along the rotation axis
+points = [[],[],[],[]]
+
+R1 = 3(P2 - P1)
+R4 = 3(P4 - P3)
+
+In the slids, the Matrix already take in account this conversion.
+
+[-u³ + 3u² - 3u + 1, 3u³ - 6u² + 3u, -3u³ + 3u², u³]
+
+x(u) = (-u³ + 3u² - 3u + 1)*P1.x + (3u³ - 6u² + 3u)*P2.x + (-3u³ + 3u²)*P3.x + u³ * P4.x
+
+No es necesario controlar vertices repetidos
+
+all points on the edge u=0 are mapped to P1
+all points on the edge u=1 are mappet to P4
+
+Option 2 -> more simple
+
+
+optional -> K(V) = 3AD(v) / Sum(Ai)
+
+AD(v) = 2pi - Sum (angle)
+
+
+Scalar value to colors -> K(v) [min, max]
+
+ red    gray     blue
+  |------|--------|
+ min     0       max
+
+
