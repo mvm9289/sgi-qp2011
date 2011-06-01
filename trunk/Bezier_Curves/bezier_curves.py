@@ -2,7 +2,7 @@
 
 
 """""""""""""""""""""""""""""""""
-Name: Marching Cubes
+Name: Bezier Curves
 Group:
 			Jose Antonio Navas Molina
 			Miguel Angel Vico Moya

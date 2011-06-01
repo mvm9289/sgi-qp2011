@@ -1,0 +1,8 @@
+SGI (Interactive Graphics Systems)
+----------------------------------
+
+-- Project 4: Bezier Curves --
+
+Group members:
+	Jose Antonio Navas Molina
+	Miguel Angel Vico Moya
